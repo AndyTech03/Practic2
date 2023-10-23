@@ -1,0 +1,11 @@
+2023-10-23 13:13:19 INFO  Main:203 - consumers cleared before update, Consumer_id_seq restarted.
+2023-10-23 13:13:19 INFO  Main:213 - insert data: insert into consumer (full_name, address) values('Иванов И.И.','ул. Ленина 21'),('Петров П.П.','ул. Ленина 12')
+2023-10-23 13:13:19 INFO  Main:216 - consumers updated
+2023-10-23 13:14:49 INFO  Main:203 - consumers cleared before update, Consumer_id_seq restarted.
+2023-10-23 13:14:49 INFO  Main:213 - insert data: insert into consumer (full_name, address) values('Иванов И.И.','ул. Ленина 21'),('Петров П.П.','ул. Ленина 12'),('Сидоров Сидор Сидорович','Лунина 21')
+2023-10-23 13:14:49 INFO  Main:216 - consumers updated
+2023-10-23 13:20:58 INFO  Main:203 - consumers cleared before update, Consumer_id_seq restarted.
+2023-10-23 13:20:58 INFO  Main:213 - insert data: insert into consumer (full_name, address) values('Иванов И.И.','ул. Ленина 21'),('Петров П.П.','ул. Ленина 12'),('Сидоров Сидор Сидорович','ул. Ленина 23')
+2023-10-23 13:20:58 INFO  Main:216 - consumers updated
+2023-10-23 13:21:27 INFO  Main:195 - selected 3 consumers
+2023-10-23 13:21:27 INFO  Main:128 - consumers overwriting from db
