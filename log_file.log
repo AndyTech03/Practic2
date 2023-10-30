@@ -9,3 +9,12 @@
 2023-10-23 13:20:58 INFO  Main:216 - consumers updated
 2023-10-23 13:21:27 INFO  Main:195 - selected 3 consumers
 2023-10-23 13:21:27 INFO  Main:128 - consumers overwriting from db
+2023-10-30 13:42:28 INFO  Main:213 - selected 3 consumers
+2023-10-30 13:42:28 INFO  Main:143 - consumers overwriting from db
+2023-10-30 13:43:22 INFO  Main:187 - consumers cleared before update, Consumer_id_seq restarted.
+2023-10-30 13:43:22 INFO  Main:197 - insert data: insert into consumer (full_name, address) values('Петров П.П.','ул. Ленина 12'),('Сидоров Сидор Сидорович','ул. Ленина 23')
+2023-10-30 13:43:22 INFO  Main:200 - consumers updated
+2023-10-30 13:43:27 INFO  Main:213 - selected 2 consumers
+2023-10-30 13:43:27 INFO  Main:143 - consumers overwriting from db
+2023-10-30 13:51:02 INFO  Main:192 - selected 2 consumers
+2023-10-30 13:51:44 INFO  Main:192 - selected 2 consumers

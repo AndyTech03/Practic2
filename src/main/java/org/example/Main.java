@@ -37,8 +37,10 @@ public class Main {
     private static final float BOTTOM_MARGIN = 15 * 72 / 25.4f;
     private static final float LEFT_MARGIN = 15 * 72 / 25.4f;
     private static final float RIGHT_MARGIN = 15 * 72 / 25.4f;
+    private static HashSet<Consumer<String>> consumersSet = new HashSet<>();
     private static List<Consumer<String>> consumers = new ArrayList<>();
     private static final String dataFile = "consumers.txt";
+    private static final String dataSetFile = "consumersSet.txt";
 
     private static Connection conn;
 
@@ -49,7 +51,10 @@ public class Main {
         PropertyConfigurator.configure(log4jConfPath);
 
         // Открытие файла
-        loadConsumers();
+        //loadConsumers();
+
+        // Открытие файла 2
+        loadConsumersSet();
 
         // Подключение к БД
         try {
@@ -93,6 +98,7 @@ public class Main {
             System.out.println("5 - Составить отчёт в PDF");
             System.out.println("6 - Взять данные с БД");
             System.out.println("7 - Загрузить данные в БД");
+            System.out.println("8 - Считать данные с БД в HashMap");
             System.out.println("0 - Выйти");
             System.out.println("Введите номер действия:");
             int choice = scanner.nextInt();
@@ -100,31 +106,41 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    addConsumer(scanner);
-                    saveConsumers();
+                    //addConsumer(scanner);
+                    addConsumerSet(scanner);
+                    //saveConsumers();
+                    saveConsumersSet();
                     break;
                 case 2:
-                    deleteConsumer(scanner);
-                    saveConsumers();
+                    //deleteConsumer(scanner);
+                    //saveConsumers();
+                    deleteConsumerSet(scanner);
+                    saveConsumersSet();
                     break;
                 case 3:
-                    editConsumer(scanner);
-                    saveConsumers();
+                    //editConsumer(scanner);
+                    //saveConsumers();
+                    editConsumerSet(scanner);
+                    saveConsumersSet();
                     break;
                 case 4:
-                    viewConsumers();
+                    //viewConsumers();
+                    viewConsumersSet();
                     break;
                 case 5:
                     try {
-                        generatePdf(pdDoc, table, font);
+                        //generatePdf(pdDoc, table, font);
+                        generatePdfFromSet(pdDoc, table, font);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                     break;
                 case 6:
                     try {
-                        consumers = selectConsumers();
-                        saveConsumers();
+                        //consumers = selectConsumers();
+                        //saveConsumers();
+                        consumersSet = selectConsumersSet();
+                        saveConsumersSet();
                         log.info("consumers overwriting from db");
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
@@ -132,7 +148,26 @@ public class Main {
                     break;
                 case 7:
                     try {
-                        refreshConsumers(consumers);
+                        //refreshConsumers(consumers);
+                        refreshConsumersSet();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                case 8:
+                    try {
+                        HashMap<String, String> consumersDataMap = selectConsumersMap();
+                        for (Map.Entry<String, String> data : consumersDataMap.entrySet())
+                            System.out.println(data.toString().replace('=', ' '));
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                case 9:
+                    try {
+                        HashMap<String, String> consumersDataMap = selectConsumersMap();
+                        for (Map.Entry<String, String> data : consumersDataMap.entrySet())
+                            System.out.println(data.toString().replace('=', ' '));
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }
@@ -152,6 +187,181 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
+    private static HashMap<String, String> selectConsumersMap() throws SQLException {
+        Statement statement = conn.createStatement();
+        ResultSet set = statement.executeQuery(
+                "select full_name, address from consumer"
+        );
+        HashMap<String, String> result = new HashMap<>();
+        while (set.next()){
+            result.put(set.getString("address"), set.getString("full_name"));
+        }
+        statement.close();
+        log.info("selected " + result.size() + " consumers");
+        return result;
+    }
+
+    private static void addConsumerSet(Scanner scanner) {
+        System.out.print("Введите ФИО потребителя: ");
+        String fio = scanner.nextLine();
+        System.out.print("Введите адрес потребителя: ");
+        String address = scanner.nextLine();
+
+        Consumer<String> consumer = new Consumer<>(fio, address);
+        consumersSet.add(consumer);
+        System.out.println("Потребитель успешно добавлен.");
+    }
+
+    private static void refreshConsumersSet() throws SQLException {
+        Statement statement = conn.createStatement();
+        statement.execute("delete from consumer where true");
+        statement.execute("ALTER SEQUENCE \"Consumer_id_seq\" RESTART WITH 1");
+        log.info("consumers cleared before update, Consumer_id_seq restarted.");
+        StringBuilder query = new StringBuilder("insert into consumer (full_name, address) values");
+        for (Consumer<String> consumer: consumersSet) {
+            query.append("('")
+                    .append(consumer.getFio())
+                    .append("','")
+                    .append(consumer.getAddress())
+                    .append("'),");
+        }
+        query.deleteCharAt(query.length()-1);
+        log.info("insert data: " + query);
+        statement.execute(query.toString());
+        statement.close();
+        log.info("consumers updated");
+    }
+
+    private static HashSet<Consumer<String>> selectConsumersSet() throws SQLException {
+        Statement statement = conn.createStatement();
+        ResultSet set = statement.executeQuery(
+                "select full_name, address from consumer"
+        );
+        HashSet<Consumer<String>> result = new HashSet<>();
+        while (set.next()){
+            result.add(new Consumer<>(set.getString("full_name"), set.getString("address")));
+        }
+        statement.close();
+        log.info("selected " + result.size() + " consumers");
+        return result;
+    }
+
+    private static void generatePdfFromSet(PDDocument pdDoc, BaseTable table, PDFont font) throws IOException {
+        for (Consumer<String> consumer : consumersSet) {
+            Row<PDPage> row = table.createRow(0);
+            createCell(row, 50, consumer.getFio(), font);
+            createCell(row, 50, consumer.getAddress(), font);
+        }
+
+        int fontSize = 12;
+        String text = "Отчет о потребителях";
+        PDPageContentStream cos = new PDPageContentStream(pdDoc, pdDoc.getPage(0));
+        PageContentStreamOptimized pcos = new PageContentStreamOptimized(cos);
+
+        float width = font.getStringWidth(text) * fontSize / 1000;
+        float pageWidth = pdDoc.getPage(0).getMediaBox().getWidth();
+        cos.beginText();
+        cos.setFont(font, fontSize);
+        cos.newLineAtOffset((pageWidth - width) / 2, 750);
+        cos.showText(text);
+        cos.endText();
+
+        InputStream imageStream = Main.class.getClassLoader().getResourceAsStream("picture.jpg");
+        assert imageStream != null;
+        Image img =  new Image(ImageIO.read(imageStream)).scaleByWidth(200);
+
+        table.draw();
+        img.draw(pdDoc, pcos, 250, 250);
+        drawQR(pdDoc, pcos, 250 , 400);
+        cos.close();
+        try {
+            File file = new File("File.pdf");
+            pdDoc.save(file);
+            System.out.println("Файл успешно создан.");
+        } catch (IOException e) {
+            System.err.println("Произошла ошибка при создании файла: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void viewConsumersSet() {
+        if (consumersSet.isEmpty()) {
+            System.out.println("Список потребителей пуст.");
+        } else {
+            System.out.println("Список потребителей:");
+            for (Consumer<String> consumer : consumersSet) {
+                System.out.println("ФИО: " + consumer.getFio());
+                System.out.println("Адрес: " + consumer.getAddress());
+                System.out.println();
+            }
+        }
+    }
+
+    private static void editConsumerSet(Scanner scanner) {
+        System.out.print("Введите ФИО потребителя для редактирования: ");
+        String fioToEdit = scanner.nextLine();
+
+        Consumer<String> consumerToEdit = consumersSet.stream()
+                .filter(consumer -> consumer.getFio().equals(fioToEdit))
+                .findFirst()
+                .orElse(null);
+
+        if (consumerToEdit != null) {
+            System.out.print("Введите новое ФИО потребителя: ");
+            String newFio = scanner.nextLine();
+            System.out.print("Введите новый адрес потребителя: ");
+            String newAddress = scanner.nextLine();
+
+            consumerToEdit.setFio(newFio);
+            consumerToEdit.setAddress(newAddress);
+            System.out.println("Потребитель успешно отредактирован.");
+        } else {
+            System.out.println("Потребитель не найден.");
+        }
+    }
+
+    private static void deleteConsumerSet(Scanner scanner) {
+        System.out.print("Введите ФИО потребителя для удаления: ");
+        String fioToDelete = scanner.nextLine();
+
+        boolean removed = consumersSet.removeIf(consumer -> consumer.getFio().equals(fioToDelete));
+
+        if (removed) {
+            System.out.println("Потребитель успешно удален.");
+        } else {
+            System.out.println("Потребитель с указанным ФИО не найден.");
+        }
+    }
+
+    private static void saveConsumersSet() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(dataFile))) {
+            oos.writeObject(consumersSet);
+        } catch (IOException e) {
+            System.err.println("Ошибка при сохранении данных: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void loadConsumersSet() {
+        File file = new File(dataFile);
+        if (file.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(dataSetFile))) {
+                consumersSet = (HashSet<Consumer<String>>) ois.readObject();
+            }
+            catch (IOException e){
+                System.out.println("Файл данных не найден.");
+            }
+            catch (ClassNotFoundException e) {
+                System.err.println("Ошибка при загрузке данных: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+        } else {
+            System.out.println("Файл данных не найден.");
+        }
+    }
+
     public static void connect() throws Exception {
         if (conn != null)
             throw new RuntimeException("Connection not closed!");
